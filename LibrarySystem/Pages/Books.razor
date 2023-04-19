@@ -1,0 +1,101 @@
+﻿@page "/Books"
+@using System.Data.SqlClient
+@using LibrarySystem.Shared
+@using static LibrarySystem.Shared.DataHandler;
+
+<h3>Books</h3>
+
+
+<h3>Print Projects</h3>
+<div class="row">
+    <div class="col-md-4">
+        <label>File name</label>
+        <input type="text" @bind-value="FileName" />
+    </div>
+    <div class="col-md-4">
+        <label>To Who</label>
+        <input type="text" @bind-value="ToWho" />
+    </div>
+    <div class="col-md-4">
+        <label>Link to File</label>
+        <input type="text" @bind-value="Link" />
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <button class="btn btn-primary" @onclick="SaveData">Save</button>
+    </div>
+    <div class="col-md-6">
+    </div>
+</div>
+
+<div class="row">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>File Name</th>
+                <th>To Who</th>
+                <th>Link</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (DataItems != null && DataItems.Count > 0)
+            {
+                @foreach (var item in DataItems)
+                {
+                    <tr>
+                        <td>@item.FileName</td>
+                        <td>@item.ToWho</td>
+                        <td>@item.Link</td>
+                        <td><button class="btn btn-danger" onclick="@(() => DeleteData(item.FileName, item.ToWho, item.Link))">Delete</button></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4">No data found.</td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+</div>
+
+
+@code {
+    private string FileName { get; set; } = "";
+    private string ToWho { get; set; } = "";
+    private string Link { get; set; } = "";
+
+
+    private List<DataItem> DataItems { get; set; }
+
+    private void SaveData()
+    {
+        var dataHandler = new DataHandler("Server=PARKINGLAPTOP\\SQLEXPRESS;Database=3DDB;Integrated Security=true;");
+        dataHandler.AddData(FileName, ToWho, Link);
+        DataItems = GetData();
+    }
+
+    private void DeleteData(string FileName, string ToWho, string Link)
+    {
+        var dataHandler = new DataHandler("Server=PARKINGLAPTOP\\SQLEXPRESS;Database=3DDB;Integrated Security=true;");
+        dataHandler.DeleteData(FileName, ToWho, Link);
+        DataItems = GetData();
+        StateHasChanged();
+    }
+
+    private List<DataItem> GetData()
+    {
+        var dataHandler = new DataHandler("Server=PARKINGLAPTOP\\SQLEXPRESS;Database=3DDB;Integrated Security=true;");
+        return dataHandler.GetData();
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        DataItems = GetData();
+    }
+}
