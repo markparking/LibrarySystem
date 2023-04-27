@@ -30,3 +30,10 @@ C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\obj\Debug\net7.0\refint\Lib
 C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\obj\Debug\net7.0\LibrarySystem.pdb
 C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\obj\Debug\net7.0\LibrarySystem.genruntimeconfig.cache
 C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\obj\Debug\net7.0\ref\LibrarySystem.dll
+C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\bin\Debug\net7.0\System.Data.SqlClient.dll
+C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\bin\Debug\net7.0\runtimes\win-arm64\native\sni.dll
+C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\bin\Debug\net7.0\runtimes\win-x64\native\sni.dll
+C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\bin\Debug\net7.0\runtimes\win-x86\native\sni.dll
+C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\bin\Debug\net7.0\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\bin\Debug\net7.0\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\mp\source\repos\LibrarySystem\LibrarySystem\obj\Debug\net7.0\LibrarySystem.csproj.CopyComplete

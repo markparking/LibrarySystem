@@ -5,20 +5,23 @@
 
 <h3>Books</h3>
 
-
-<h3>Print Projects</h3>
+<h4>Add Book:</h4>
 <div class="row">
     <div class="col-md-4">
-        <label>File name</label>
-        <input type="text" @bind-value="FileName" />
+        <label>Title</label>
+        <input type="text" @bind-value="BookTitle" />
     </div>
     <div class="col-md-4">
-        <label>To Who</label>
-        <input type="text" @bind-value="ToWho" />
+        <label>Author</label>
+        <input type="text" @bind-value="AuthorName" />
     </div>
     <div class="col-md-4">
-        <label>Link to File</label>
-        <input type="text" @bind-value="Link" />
+        <label>Published</label>
+        <input type="text" @bind-value="PublishYear" />
+    </div>
+    <div class="col-md-4">
+        <label>Genre</label>
+        <input type="text" @bind-value="Genre" />
     </div>
 </div>
 <div class="row">
@@ -33,10 +36,12 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>File Name</th>
-                <th>To Who</th>
-                <th>Link</th>
-                <th>Delete</th>
+                <th>Book Title</th>
+                <th>Author</th>
+                <th>Published</th>
+                <th>Genre</th>
+                <th>Borrowed</th>
+
             </tr>
         </thead>
         <tbody>
@@ -45,10 +50,13 @@
                 @foreach (var item in DataItems)
                 {
                     <tr>
-                        <td>@item.FileName</td>
-                        <td>@item.ToWho</td>
-                        <td>@item.Link</td>
-                        <td><button class="btn btn-danger" onclick="@(() => DeleteData(item.FileName, item.ToWho, item.Link))">Delete</button></td>
+                        <td>@item.BookTitle</td>
+                        <td>@item.AuthorName</td>
+                        <td>@item.PublishYear</td>
+                        <td>@item.Genre</td>
+                        <td>@item.Borrowed</td>
+                        <td><button class="btn btn-danger" onclick="@(() => ReserveData(item.BookTitle, item.Borrowed))">Reserve</button></td>
+                        <td><button class="btn btn-danger" onclick="@(() => DeleteData(item.BookTitle, item.Author_ID, item.PublishYear, item.Genre, item.Borrowed))">Delete</button></td>
                     </tr>
                 }
             }
@@ -65,31 +73,44 @@
 
 
 @code {
-    private string FileName { get; set; } = "";
-    private string ToWho { get; set; } = "";
-    private string Link { get; set; } = "";
+    public string BookTitle { get; set; } = "";
+    public int Author_ID { get; set; }
+
+    public int PublishYear { get; set; }
+    public string Genre { get; set; }
+
+    public bool Borrowed { get; set; } = false;
+
+    public string AuthorName { get; set; } = "";
 
 
     private List<DataItem> DataItems { get; set; }
 
     private void SaveData()
     {
-        var dataHandler = new DataHandler("Server=PARKINGLAPTOP\\SQLEXPRESS;Database=3DDB;Integrated Security=true;");
-        dataHandler.AddData(FileName, ToWho, Link);
+        var dataHandler = new DataHandler("Server=192.168.23.211,1433;Database=BiblotekDB;User ID=mark;Password=Passw0rd;");
+        dataHandler.AddData(BookTitle, Author_ID, PublishYear, Genre, Borrowed, AuthorName);
         DataItems = GetData();
     }
 
-    private void DeleteData(string FileName, string ToWho, string Link)
+    private void DeleteData(string BookTitle, int Author_ID, int PublishYear, string Genre, bool Borrowed)
     {
-        var dataHandler = new DataHandler("Server=PARKINGLAPTOP\\SQLEXPRESS;Database=3DDB;Integrated Security=true;");
-        dataHandler.DeleteData(FileName, ToWho, Link);
+        var dataHandler = new DataHandler("Server=192.168.23.211,1433;Database=BiblotekDB;User ID=mark;Password=Passw0rd;");
+        dataHandler.DeleteData(BookTitle, Author_ID, PublishYear, Genre, Borrowed);
         DataItems = GetData();
         StateHasChanged();
     }
 
+    private void ReserveData(string BookTitle, bool Borrowed)
+    {
+        var dataHandler = new DataHandler("Server=192.168.23.211,1433;Database=BiblotekDB;User ID=mark;Password=Passw0rd;");
+        dataHandler.ReserveData(BookTitle, Borrowed);
+        DataItems = GetData();
+        StateHasChanged();
+    }
     private List<DataItem> GetData()
     {
-        var dataHandler = new DataHandler("Server=PARKINGLAPTOP\\SQLEXPRESS;Database=3DDB;Integrated Security=true;");
+        var dataHandler = new DataHandler("Server=192.168.23.211,1433;Database=BiblotekDB;User ID=mark;Password=Passw0rd;");
         return dataHandler.GetData();
     }
 

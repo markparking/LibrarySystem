@@ -1,5 +1,7 @@
-﻿using System.Data;
+﻿using LibrarySystem.Pages;
+using System.Data;
 using System.Data.SqlClient;
+using System.Text.RegularExpressions;
 
 namespace LibrarySystem.Shared
 {
@@ -8,9 +10,15 @@ namespace LibrarySystem.Shared
         private readonly string _connectionString;
         public class DataItem
         {
-            public string FileName { get; set; } = "";
-            public string ToWho { get; set; } = "";
-            public string Link { get; set; } = "";
+            public string BookTitle { get; set; } = "";
+            public int Author_ID { get; set; }
+
+            public int PublishYear { get; set; }
+            public string Genre { get; set; }
+
+            public bool Borrowed { get; set; } = false;
+
+            public string AuthorName { get; set; } = "";
         }
 
         public DataHandler(string connectionString)
@@ -19,69 +27,74 @@ namespace LibrarySystem.Shared
             CheckDatabase();
         }
 
-        public void AddData(string title, string towho, string linktofile)
+        public void AddData(string booktitle, int authorid, int publishyear, string genre, bool borrowed, string authorname)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
             using SqlCommand command = connection.CreateCommand();
 
-            command.CommandText = "INSERT INTO PrintTB (FileName, ToWho, Link) VALUES (@Title, @ToWho, @Link)";
-            command.Parameters.AddWithValue("@Title", title);
-            command.Parameters.AddWithValue("@ToWho", towho);
-            command.Parameters.AddWithValue("@Link", linktofile);
+            // Check if the author already exists in the Authors table
+            command.CommandText = "SELECT AuthorID FROM Authors WHERE AuthorName = @AuthorName;";
+            command.Parameters.AddWithValue("@AuthorName", authorname);
+            connection.Open();
+            int? existingAuthorId = command.ExecuteScalar() as int?;
+            connection.Close();
 
-            try
+            // If the author doesn't exist, insert a new row into the Authors table
+            if (!existingAuthorId.HasValue)
             {
+                command.CommandText = "INSERT INTO Authors (AuthorName) VALUES (@AuthorName); SELECT SCOPE_IDENTITY();";
                 connection.Open();
-                command.ExecuteNonQuery();
+                existingAuthorId = Convert.ToInt32(command.ExecuteScalar());
+                connection.Close();
             }
-            catch (SqlException ex)
-            {
-                if (ex.Number == 8152) // String or binary data would be truncated
-                {
-                    // Truncate the Link parameter value to fit within the column size limit
-                    int linkMaxLength = 200; // or whatever maximum length you have defined for the Link column
-                    string truncatedLink = linktofile.Substring(0, Math.Min(linktofile.Length, linkMaxLength));
-                    command.Parameters["@Link"].Value = truncatedLink;
 
-                    // Retry the SQL command with the truncated link value
-                    command.ExecuteNonQuery();
-                }
-                else
-                {
-                    // Handle other types of SQL exceptions
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                // Handle other types of exceptions
-                throw;
-            }
+            // Insert a new row into the Books table
+            command.CommandText = "INSERT INTO Books (Title, Author_ID, PublishYear, Genre, Borrowed) VALUES (@BookTitle, @Author_ID, @PublishYear, @Genre, @Borrowed)";
+            command.Parameters.Clear();
+            command.Parameters.AddWithValue("@BookTitle", booktitle);
+            command.Parameters.AddWithValue("@Author_ID", existingAuthorId.Value);
+            command.Parameters.AddWithValue("@PublishYear", publishyear);
+            command.Parameters.AddWithValue("@Genre", genre);
+            command.Parameters.AddWithValue("@Borrowed", borrowed);
+            connection.Open();
+            command.ExecuteNonQuery();
+            connection.Close();
         }
 
-
-
-
-        public void DeleteData(string title, string towho, string linktofile)
+        public void DeleteData(string booktitle, int authorid, int publishyear, string genre, bool borrowed)
         {
             using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand("DELETE FROM PrintTB WHERE FileName = @title AND ToWho = @towho AND Link = @linktofile", connection))
+            using (var command = new SqlCommand("DELETE FROM Books WHERE Title = @booktitle", connection))
             {
-                command.Parameters.AddWithValue("@title", title);
-                command.Parameters.AddWithValue("@towho", towho);
-                command.Parameters.AddWithValue("@linktofile", linktofile);
+                command.Parameters.AddWithValue("@BookTitle", booktitle);
                 command.CommandType = CommandType.Text;
                 connection.Open();
                 command.ExecuteNonQuery();
             }
         }
 
+        public void ReserveData(string booktitle, bool borrowed)
+        {
+            borrowed = true;
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand("UPDATE Books SET Borrowed = @Borrowed WHERE Title = @BookTitle", connection))
+            {
+                command.Parameters.AddWithValue("@BookTitle", booktitle);
+                command.Parameters.AddWithValue("@Borrowed", borrowed);
+                command.CommandType = CommandType.Text;
+                connection.Open();
+                command.ExecuteNonQuery();
+            }
+        }
+
+
+
         public List<DataItem> GetData()
         {
             var data = new List<DataItem>();
 
             using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand("SELECT * FROM PrintTB", connection))
+            using (var command = new SqlCommand("SELECT Title AS \"Book Title\", AuthorName AS \"Author\", PublishYear AS \"Published\", Genre, Borrowed FROM Books B INNER JOIN Authors A ON B.Author_ID = A.AuthorID GROUP BY A.AuthorID, Title, AuthorName, PublishYear, Genre, Borrowed;", connection))
             {
                 command.CommandType = CommandType.Text;
                 connection.Open();
@@ -92,13 +105,14 @@ namespace LibrarySystem.Shared
                     {
                         var item = new DataItem
                         {
-                            FileName = reader.GetString(reader.GetOrdinal("FileName")),
-                            ToWho = reader.GetString(reader.GetOrdinal("ToWho")),
-                            Link = reader.GetString(reader.GetOrdinal("Link"))
+                            BookTitle = reader.GetString(reader.GetOrdinal("Book Title")),
+                            AuthorName = reader.GetString(reader.GetOrdinal("Author")),
+                            PublishYear = reader.GetInt32(reader.GetOrdinal("Published")),
+                            Genre = reader.GetString(reader.GetOrdinal("Genre"))
                         };
-
                         data.Add(item);
                     }
+
                 }
             }
 
@@ -110,29 +124,10 @@ namespace LibrarySystem.Shared
             {
                 connection.Open();
 
-                // Check if database exists
-                using (var command = new SqlCommand($"SELECT COUNT(*) FROM [master].[sys].[databases] WHERE name = '3DDB'", connection))
-                {
-                    var count = (int)command.ExecuteScalar();
-                    if (count == 0)
-                    {
-                        // Create database
-                        using (var command2 = new SqlCommand("CREATE DATABASE 3DDB", connection))
-                        {
-                            command2.ExecuteNonQuery();
-                        }
-                    }
-                }
-
-                // Check if PrintTB table exists, create it if not
-                using (var command3 = new SqlCommand($"IF OBJECT_ID('PrintTB', 'U') IS NULL BEGIN CREATE TABLE PrintTB (FileName NVARCHAR(50), ToWho NVARCHAR(50), Link NVARCHAR(200)) END", connection))
-                {
-                    command3.ExecuteNonQuery();
-                }
             }
+
         }
 
     }
-
 }
 
