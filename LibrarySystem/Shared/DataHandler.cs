@@ -77,7 +77,7 @@ namespace LibrarySystem.Shared
         {
             borrowed = true;
             using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand("UPDATE Books SET Borrowed = @Borrowed WHERE Title = @BookTitle", connection))
+            using (var command = new SqlCommand("UPDATE Books SET Borrowed = @Borrowed WHERE Title = @BookTitle", connection)) //Virker ikke. Fix
             {
                 command.Parameters.AddWithValue("@BookTitle", booktitle);
                 command.Parameters.AddWithValue("@Borrowed", borrowed);
